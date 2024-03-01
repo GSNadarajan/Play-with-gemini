@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Story from Gemini-Pro</title>
+  </head>
+  <body>
+    <h1>Content from Gemini-Pro</h1>
+    <div id="story"></div>
+    <script type="importmap">
+      {
+        "imports": {
+          "@google/generative-ai": "https://esm.run/@google/generative-ai"
+        }
+      }
+    </script>
+    <script type="module">
+      // Import GoogleGenerativeAI class
+      import { GoogleGenerativeAI } from "@google/generative-ai";
+
+      // Replace "YOUR_API_KEY" with your actual API key
+      const apiKey = "AIzaSyCSg2ojEsOF0Q4K7ZYSZzEBZzJKQSpFOTs";
+
+      // Check if the API key is provided
+      if (!apiKey) {
+        console.error("API key not provided. Please set it in the script.");
+      }
+
+      // Create an instance of GoogleGenerativeAI
+      const genAI = new GoogleGenerativeAI(apiKey);
+
+      // Function to generate and display the story
+      async function run() {
+        try {
+          // For text-only input, use the gemini-pro model
+          const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+
+          const prompt = "Write a story about Ajithkumar";
+
+          // Generate the content and wait for the response
+          const result = await model.generateContent(prompt);
+          const response = await result.response;
+
+          // Extract the generated text
+          const text = response.text();
+
+          // Display the generated text in the HTML content
+          document.getElementById("story").textContent = text;
+        } catch (error) {
+          console.error("Error generating content:", error);
+        }
+      }
+
+      // Call the run function when the page loads
+      window.onload = run;
+    </script>
+  </body>
+</html>
