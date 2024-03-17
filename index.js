@@ -1,35 +1,102 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
-require('dotenv').config()
+const { MongoClient } = require('mongodb');
+require('dotenv').config();
 
 const genAI = new GoogleGenerativeAI(process.env.API_KEY);
 
-async function run() {
-  const model = genAI.getGenerativeModel({ model: "gemini-pro"});
+async function processUserPrompt(prompt) {
+    try {
+        const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
 
-  const chat = model.startChat({
-    history: [
-      {
-        role: "user",
-        parts: "Ajith Kumar, popularly known as 'Thala Ajith,' is a celebrated Indian film actor who has left an indelible mark on the Tamil film industry. Born on May 1, 1971, in Hyderabad, India, Ajith's acting style is characterized by a unique blend of intensity, versatility, and natural flair. His ability to immerse himself into diverse roles has earned him accolades and Ajith's filmography is an impressive tapestry of successful movies, each contributing to his iconic status. Films like 'Mankatha,' 'Veeram,' 'Vedalam,' and 'Viswasam' have not only showcased his acting prowess but have also established him as a leading star in the industry. Apart from his cinematic achievements, Ajith is known for his philanthropic efforts, and his role as a family man. Ajith Kumar stands as a multifaceted personality, a revered actor, a racing enthusiast, a humble individual, and a beacon of inspiration. Ajith's humility and simplicity are often spoken about by those who have worked with him. Despite his celebrity status, he maintains a down-to-earth demeanor, making him approachable. Ajith's journey to stardom is a tale of perseverance, talent, and charisma. Beyond acting, Ajith is passionate about motorsports, expressing his love for speed and adventure. Ajith's dedication to motorsports has garnered him recognition and awards, further adding to his diverse repertoire. In addition to his contributions to the entertainment industry, Ajith is actively involved in philanthropic endeavors. His charitable activities span a range of causes, including education and healthcare. From a young age, Ajith displayed a penchant for acting and the arts. His foray into the film industry began in the late 1980s when he took on small roles. However, it was his breakthrough role in the film 'Prema Pusthakam' in 1992 that catapulted him into the spotlight. The success of the movie marked the beginning of Ajith's illustrious career in the world of cinema.",
-      },
-      {
-        role: "model",
-        parts: "You are a humble helper who can answer for questions asked by users from the given context.",
-        
-      },
-      
-    ],
-    generationConfig: {
-      maxOutputTokens: 100,
-    },
-  });
+        const { operation, fields, collectionName, dbName, mongoURL } = parseUserPrompt(response.text);
 
-  const msg = "Who is thala?";
-
-  const result = await chat.sendMessage(msg);
-  const response = await result.response;
-  const text = response.text();
-  console.log(text);
+        if (operation === "insert") {
+            await insertDocument(fields, collectionName, mongoURL, dbName);
+        } else if (operation === "update") {
+            await updateDocument(fields, collectionName, mongoURL, dbName);
+        } else if (operation === "delete") {
+            await deleteDocuments(fields, collectionName, mongoURL, dbName);
+        } else {
+            console.error("Unsupported operation:", operation);
+        }
+    } catch (error) {
+        console.error("Error occurred:", error);
+    }
 }
 
-run();
+function parseUserPrompt(prompt) {
+    // Logic to parse the user prompt and extract operation, fields, collection name, db name, and mongo URL
+    // For demonstration, let's assume the extraction logic
+    return {
+        operation: "insert", // or "update", "delete"
+        fields: { name: "nattu", age: 69 , email : "nattu@gmail.com" }, // Example fields extracted from prompt
+        collectionName: "profile", // Example collection name extracted from prompt
+        dbName: "rag_doc", // Example db name extracted from prompt
+        mongoURL: "mongodb+srv://Nattu:dEGBZBiEpR3Xyr0k@cluster0.0yeuk36.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0" // Example MongoDB URL extracted from prompt
+    };
+}
+
+async function insertDocument(fields, collectionName, mongoURL, dbName) {
+    // Insert document into MongoDB collection
+    // Use MongoClient to connect to MongoDB and insert the document
+    // Example implementation
+    const client = new MongoClient(mongoURL);
+    try {
+        await client.connect();
+        const db = client.db(dbName);
+        const collection = db.collection(collectionName);
+        await collection.insertOne(fields);
+        console.log("Document inserted successfully.");
+    } catch (error) {
+        console.error("Error occurred while inserting document:", error);
+    } finally {
+        await client.close();
+    }
+}
+
+async function updateDocument(fields, collectionName, mongoURL, dbName) {
+    // Update document in MongoDB collection
+    // Use MongoClient to connect to MongoDB and update the document
+    // Example implementation
+    // Adjust the filter and update parameters based on your requirements
+    const filter = { name: fields.name }; // Example filter based on the "name" field
+    const update = { $set: fields }; // Update the document with the provided fields
+    const client = new MongoClient(mongoURL);
+    try {
+        await client.connect();
+        const db = client.db(dbName);
+        const collection = db.collection(collectionName);
+        await collection.updateOne(filter, update);
+        console.log("Document updated successfully.");
+    } catch (error) {
+        console.error("Error occurred while updating document:", error);
+    } finally {
+        await client.close();
+    }
+}
+
+async function deleteDocuments(fields, collectionName, mongoURL, dbName) {
+    // Delete documents in MongoDB collection
+    // Use MongoClient to connect to MongoDB and delete the documents
+    // Example implementation
+    // Adjust the filter based on your requirements
+    const filter = fields; // Example filter based on the provided fields
+    const client = new MongoClient(mongoURL);
+    try {
+        await client.connect();
+        const db = client.db(dbName);
+        const collection = db.collection(collectionName);
+        const result = await collection.deleteMany(filter);
+        console.log(`${result.deletedCount} document(s) deleted.`);
+    } catch (error) {
+        console.error("Error occurred while deleting documents:", error);
+    } finally {
+        await client.close();
+    }
+}
+
+// Example usage
+const userPrompt = "add two fields one is name: 'nattu' and another one is age : 33 and the collection name is demo and the db name is rag_doc and the mongo_url is 'httaps://wgewwgnwongrwgwelg'";
+processUserPrompt(userPrompt);
